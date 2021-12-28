@@ -12,9 +12,9 @@
 
 # Install
 Install using github since you want the code and not the binary of the script.
-`
-git clone install && cd Goalang-Request-Template && chmod +x reqGolang.go;
-`
+```
+git clone install https://github.com/Brum3ns/Golang-request-template.git && cd Golang-request-template && chmod +x ReqGolang_module.go;
+```
 (*Install => goto directory => add execution privileges*)
 
 # Usage
