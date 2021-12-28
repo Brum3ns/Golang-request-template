@@ -19,6 +19,13 @@ git clone https://github.com/Brum3ns/Golang-request-template.git && cd Golang-re
 
 # Usage
 
+**Run the script (Recommend: "./ReqGolang_module.go" since it's will save you time ;)**
+`Golang:  go run ReqGolang_module.go`
+`Bash:    ./ReqGolang_module.go`
+
+**Display help menu and user parse arguments (OPTIONS):**
+`./ReqGolang_module.go -h`
+
 
 # How to continue and add your own code to it
 All Function, Struct, Variables etc... Are well commented and explain deep what they do and why. To start add your own code. You will first just configure the basics that is already done inside the script. This include/if prefered custom "Banner", "HTTP Client", "User parse arguments (OPTIONS)" and some Struct. Don't worry if it sounds a lot.
