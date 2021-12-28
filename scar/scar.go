@@ -2,12 +2,14 @@
 package main
 
 import (
-	//"os"
+	"os"
 	"fmt"
 	"log"
 	"net"
 	"time"
 	"flag"
+	"bufio"
+	"strings"
 	"net/http" // <====[Maybe try fasthttp?]
 	"crypto/tls"
 )
@@ -16,12 +18,15 @@ import (
 
 type Options struct {
 	url string
-	urlLst string
+	filenameUrls string
+	lst_urls []string
 
 	method string
 
 	timeout int
 	threads int
+
+	verbose bool
 }
 
 type Target struct {
@@ -32,6 +37,8 @@ type Response struct {
 	R_url string
 	R_status int
 	R_ContentLength string
+
+	Error string
 }
 
 type Client struct{
@@ -41,30 +48,24 @@ type Client struct{
 
 /*----------------------[README]-------------------------*\
 | Make sure to understand the code before continue on it. |
-| Setup every *struct* and *function* and sketch how to   |
-| process it before you start do the actuall code.		  |
+| Check every *struct* and *function* and how it is       |
+| processed before you start to add your own code		  |
 |														  |
 |			~ Happy Hacking by Brumens					  |
 |			~ Made with coffine <3 						  |
 \*-------------------------------------------------------*/
 
-
 func main() {
 	banner()
 	opt := userArguments()
 	client := client(opt)
+	
+	configure(opt)
 
+	//Disclaimer text:
+	fmt.Printf("\033[1;1mStay ethical. You are responsible for your actions.\ncreator of the tool is not responsible for any misuse or damage.\033[0m\n")
+	fmt.Println(strings.Repeat("-", 64))
 
-	//urls lists (7) -{TEMP}
-	lst_urls := []string{
-		"https://www.google.com",
-		"https://support.google.com",
-		"https://www.example.com",
-		"https://www.youtube.com",
-		"https://www.nordvpn.com",
-		"https://www.bing.com",
-		"https://www.yandex.com",
-	}
 
 	//Set a *timer* that calculate the total process time of all code executions and requests:
 	timer := time.Now()
@@ -73,44 +74,40 @@ func main() {
 	jobs := make(chan Target)
 	results := make(chan Response)
 
-
-	/*DEBUGG*/fmt.Printf("[DBG]\033[1;31m[HTTP Client] : [%v] \033[0m\n", client)//*/
-
-
 	//Starting up threads to do the jobs: (opt.threads == threads to use)
 	for thread := 1; thread <= opt.threads; thread++ {
-		/*DEBUGG*/fmt.Printf("[DBG]\033[1;31m[Thread] : [%v] \033[0m\n", thread)//*/
-		//go request(opt, client, thread, jobs, results)
+		go request(opt, client, thread, jobs, results)
 	}
 
 	
 	//Take urls and add each to the "Job pool": -{TEMP}
 	//fmt.Println(opt.urlLst)
-	for _, url := range lst_urls {
-		/*DEBUGG*/fmt.Printf("[DBG]\033[1;31m[Url] : [%v] \033[0m\n", url)//*/
-		//jobs <- Target{URL: url}
+	for _, url := range opt.lst_urls {
+		jobs <- Target{URL: url}
 	}
 	close(jobs)
 
 
 	//Check the stored result in the "result pool"
-	for a := 1; a <= 7; a++ {
+	for item := 1; item <= len(opt.lst_urls); item++ {
 		result := <-results
-		log.Println(result)
+		log.Printf("\033[1;36m:\033[0m %v \n", result)
 	}
 
 
-	log.Printf(":: Process finished. Time[%v]\n", time.Since(timer) )
+	log.Printf("\033[1;36m|\033[0m Process finished. Time [%v]\n", time.Since(timer) )
+	os.Exit(0)
 }
 
 func userArguments() *Options {
 	opt := &Options{}
 
 	flag.StringVar(&opt.url, "u", "", "Url to test")
-	flag.StringVar(&opt.urlLst, "l", "", "File containing urls to test")
+	flag.StringVar(&opt.filenameUrls, "l", "", "File containing urls to test")
 	flag.IntVar(&opt.timeout, "T", 7000, "Timeout (ms) before giving up on response")
 	flag.IntVar(&opt.threads, "t", 15, "Threads(\"Workers\") to use")
 	flag.StringVar(&opt.method, "m", "GET", "HTTP method to use in the request")
+	flag.BoolVar(&opt.verbose, "v", false, "Verbose output")
 
 	flag.Parse()
 
@@ -120,14 +117,26 @@ func userArguments() *Options {
 
 func configure(opt *Options) {
 
-	if opt.urlLst != "" {
-		fmt.Println("List with url(FILE) >>", opt.urlLst)
-	}else if opt.url != "" {
-		fmt.Println("Single url >>", opt.url)
-	}
+	if opt.filenameUrls != "" {
+			
+		file, _ := os.Open(opt.filenameUrls)
+		scanner := bufio.NewScanner(file)
 
-	//file_urlLst, _ := os.Open(opt.urlList)
-	//for _, url := range
+		for scanner.Scan() {
+
+			if scanner.Text() != "" && scanner.Text() != "\n" {
+
+				opt.lst_urls = append(opt.lst_urls, scanner.Text())
+			}
+		}
+
+	}else if opt.url != "" {
+	
+		opt.lst_urls = append(opt.lst_urls, opt.url)
+	}else {
+		fmt.Printf("\033[1;36m|\033[0m Usage: scar \033[1;36m-h\033[0m\n")
+		os.Exit(0)
+	}
 }
 
 func request(opt *Options, client *http.Client, Thread_id int, jobs <-chan Target, results chan<- Response) {
@@ -135,18 +144,21 @@ func request(opt *Options, client *http.Client, Thread_id int, jobs <-chan Targe
 	//Extract each urls inside the "job pool":
 	for url := range jobs {
 
-		/*DEBUGG*/fmt.Printf("[DBG]\033[1;31m[Thread_id] : [%v]\033[0m\n", Thread_id)//*/
-
-
 		//Request each urls and store it's response data into the "results pool":
 		req, err := http.NewRequest(opt.method, url.URL, nil)
 		if err != nil {
-			log.Printf(":E: Request process failed -> ", err.Error())
+			if opt.verbose == true {log.Printf(":\033[1;31mx\033[0m: Request process failed \033[1;31m->\033[0m [%v]", err.Error())}
+
+			results <- Response{Error: "url"}
+			return
 		}
 
 		resp, err := client.Do(req)
 		if err != nil {
-			log.Printf(":E: Failed to send Request ->", err.Error())
+			if opt.verbose == true {log.Printf(":\033[1;31mx\033[0m: Failed to send Request \033[1;31m->\033[0m [%v]", err.Error())}
+			
+			results <- Response{Error: "url"}
+			return
 		}
 
 		results <- Response{
@@ -159,7 +171,6 @@ func request(opt *Options, client *http.Client, Thread_id int, jobs <-chan Targe
 
 func client(opt *Options) *http.Client {
 	timeout := time.Duration(opt.timeout) * time.Millisecond
-	/*DEBUGG*/fmt.Printf("[DBG]\033[1;31m[Request Timeout] : [%v]\033[0m\n", timeout)//*/
 
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error { return http.ErrUseLastResponse },
@@ -184,15 +195,14 @@ func client(opt *Options) *http.Client {
 
 func banner() {
 	fmt.Printf(`%v
-  __  __  __  __ 
- /_  /   /_/ /_/
-._/ /_, / / / )%v 
+   __  __  __  __ 
+  /_  /   /_/ /_/
+ ._/ /_, / / / )%v
+
+"Make a scar in the web"
 
 Author: Brumens
 Version: 1.0
-
-Stay ethical. You are responsible for your actions.
-creator of the tool is not responsible for any misuse or damage.
 
 `, "\033[1;36m", "\033[0m") //<===[Colors for the banned]
 }
