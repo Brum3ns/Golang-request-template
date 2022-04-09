@@ -1,13 +1,13 @@
 # Golang request template - (ReqGolang_module)
 
 # Futures
-* Lightway and CPU/RAM friendly with high speed and preformance.
-* Friendly configure & customization.
-* Extremly well commented without a good amount of code to get going quick.
-* Support User parse arguments (flags) and do have "Struct" and a "Function" for it.
-* Build in and support multi Threads, Channels(chan) and use Golang Async (go) function.
-* Configurable "HTTP client" with the most options already configured and used.
-* Prebuild error handling for requests and user parse arguments.
+* Lightway and CPU/RAM friendly with high speed and preformance
+* Friendly configure & customization
+* Well commented with a good amount of code choices
+* Support *user parse arguments* (flags)
+* Build in and *multi threads* and *Channels*(chan) combined with *Async*/*Await* (GO function)
+* Advanced configured "HTTP client"
+* Prebuild error handling for requests and user parse arguments
 
 
 # Install
@@ -19,16 +19,17 @@ git clone https://github.com/Brum3ns/Golang-request-template.git && cd Golang-re
 
 # Usage
 
-**Run the script (Recommend: "./ReqGolang_module.go" since it's will save you time ;)**
+**Run the script**
 `Golang:  go run ReqGolang_module.go`
 `Bash:    ./ReqGolang_module.go`
 
-**Display help menu and user parse arguments (OPTIONS):**
+**Display built in help menu**
 `./ReqGolang_module.go -h`
 
 
 # How to continue and add your own code to it
-All Function, Struct, Variables etc... Are well commented and explain deep what they do and why. To start add your own code. You will first just configure the basics that is already done inside the script. This include/if prefered custom "Banner", "HTTP Client", "User parse arguments (OPTIONS)" and some Struct. Don't worry if it sounds a lot.
+All Function, Struct, Variables etc... Are well commented and explained deeply.
+Start by configuring the basics. This include/if prefered custom "Banner", "HTTP Client" and new "*User parse arguments*" (OPTIONS)
 
 **All can be found inside your IDE by using (CTRL + F) and search for comments that include: [CUSTOMIZE]**
-This comments will explain what you can add/adjust to make the script more suitabe for you.
+This comments will explain what you can add/adjust to make the script more suitabe for your development.
